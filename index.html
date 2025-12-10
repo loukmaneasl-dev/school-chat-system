@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تسجيل الدخول - المنصة التعليمية</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { margin: 0; font-family: 'Tajawal', sans-serif; background: #f3f4f6; display: flex; align-items: center; justify-content: center; height: 100vh; color: #1f2937; }
+        .login-container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
+        .logo { font-size: 3rem; color: #4361ee; margin-bottom: 20px; }
+        h2 { margin: 0 0 20px 0; font-weight: 800; color: #111827; }
+        .form-group { margin-bottom: 15px; text-align: right; }
+        label { display: block; margin-bottom: 5px; font-weight: 700; font-size: 0.9rem; }
+        input { width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: 0.2s; }
+        input:focus { border-color: #4361ee; outline: none; box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2); }
+        button { width: 100%; padding: 14px; background: #4361ee; color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.2s; margin-top: 10px; }
+        button:hover { background: #3a0ca3; }
+        .footer { margin-top: 20px; font-size: 0.8rem; color: #6b7280; }
+        .error-msg { color: #ef4444; background: #fee2e2; padding: 10px; border-radius: 8px; margin-bottom: 15px; display: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo"><i class="fas fa-graduation-cap"></i></div>
+        <h2>تسجيل الدخول</h2>
+        <div id="errorMsg" class="error-msg"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>اسم المستخدم</label>
+                <input type="text" id="username" placeholder="أدخل اسم المستخدم" required>
+            </div>
+            <div class="form-group">
+                <label>كلمة المرور</label>
+                <input type="password" id="password" placeholder="أدخل كلمة المرور" required>
+            </div>
+            <button type="submit" id="btnSubmit">دخول</button>
+        </form>
+        <div class="footer">
+            المنصة التعليمية الذكية &copy; 2024
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmit');
+            const err = document.getElementById('errorMsg');
+            const user = document.getElementById('username').value;
+            const pass = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+            err.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: user, password: pass })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    if (data.user.type === 'admin') {
+                        // For admin, we don't store in generic local storage to keep separation
+                        // The admin page handles its own session check usually, but for consistency:
+                        localStorage.setItem('user', JSON.stringify(data.user)); // Optional if you want shared state
+                        window.location.href = '/admin';
+                    } else {
+                        localStorage.setItem('isLoggedIn', 'true');
+                        localStorage.setItem('user', JSON.stringify(data.user));
+                        window.location.href = '/chat';
+                    }
+                } else {
+                    err.textContent = data.error || 'فشل تسجيل الدخول';
+                    err.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'دخول';
+                }
+            } catch (e) {
+                err.textContent = 'خطأ في الاتصال بالسيرفر';
+                err.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'دخول';
+            }
+        });
+    </script>
+</body>
+</html>
